@@ -9,8 +9,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           "tfjs-vis": ["@tensorflow/tfjs-vis"],
-          "tfjs": ["@tensorflow/tfjs"],
-          "vega": ["vega"]
+          "tfjs": ["@tensorflow/tfjs"]
         },
       },
     },

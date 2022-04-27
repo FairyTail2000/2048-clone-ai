@@ -88,7 +88,7 @@ export class Orchestrator {
 	}
 
 	async just_play(): Promise<boolean[]> {
-		let state: Tensor | null = tensor2d([this.gameTable.state]);
+		let state: Tensor = tensor2d([this.gameTable.state]);
 		const action = this.model.chooseAction(state);
 		const ret = this.gameTable.shift(this.actionToAction(action[0]));
 		if (!ret) {
@@ -98,7 +98,7 @@ export class Orchestrator {
 	}
 
 	async run() {
-		let state: Tensor | null = tensor2d([this.gameTable.state]);
+		let state: Tensor = tensor2d([this.gameTable.state]);
 		let totalReward = 0;
 		let step = 0;
 		while (step < this.maxStepsPerGame) {
@@ -109,7 +109,7 @@ export class Orchestrator {
 			const done = this.gameTable.won || this.gameTable.lost;
 			const reward = this.computeReward(this.gameTable.state, this.gameTable.current_score, this.gameTable.lost);
 
-			let nextState: Tensor | null = tensor2d([this.gameTable.state]);
+			let nextState: Tensor = tensor2d([this.gameTable.state]);
 
 			if (done) {
 				this.memory.addSample([state, action, reward, null])

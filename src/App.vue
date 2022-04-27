@@ -189,7 +189,7 @@ async function save() {
   }
   await toRaw(model.value).saveModel(MODEL_SAVE_PATH_ + i);
   status.value = `Saved model as ${MODEL_SAVE_PATH_ + i}`;
-  //Umm whyyyy????
+  //Umm, why????
   //@ts-ignore
   models.value = await io.listModels();
 }
