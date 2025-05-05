@@ -30,13 +30,13 @@
           <label for="memory_slots_input" class="form-label">Memory Slots</label>
           <input type="number" min="1" max="100000" id="memory_slots_input" v-model="memorySlots" :disabled="aiTrainingService.getBlockInput().value" class="form-control" aria-describedby="memory_slots_help">
           <div id="memory_slots_help" class="form-text">How much memory to give the neural network</div>
-          <label for="training_delay_input" class="form-label">Step delay</label>
+          <label for="play_delay_input" class="form-label">Play step delay</label>
           <div class="form-check">
             <input type="checkbox" class="form-check-input" id="disable_delay" :disabled="aiTrainingService.getBlockInput().value" v-model="noDelay">
             <label for="disable_delay" class="form-check-label">Disable delay</label>
           </div>
-          <input type="number" min="1" max="10000" id="training_delay_input" v-model="trainingDelay" :disabled="aiTrainingService.getBlockInput().value || noDelay" class="form-control" aria-describedby="training_delay_help">
-          <div id="training_delay_help" class="form-text">How much time between the steps performed by the neural network</div>
+          <input type="number" min="1" max="10000" id="play_delay_input" v-model="trainingDelay" :disabled="aiTrainingService.getBlockInput().value || noDelay" class="form-control" aria-describedby="play_delay_help">
+          <div id="play_delay_help" class="form-text">How much time between steps when AI is playing (training uses web workers and doesn't block UI)</div>
           <label for="steps_input" class="form-label">Steps per game</label>
           <input type="number" min="1" max="10000" id="steps_input" v-model="steps" :disabled="aiTrainingService.getBlockInput().value" class="form-control" aria-describedby="steps_input_help">
           <div id="steps_input_help" class="form-text">How many steps until the round is complete and the board is reset</div>
