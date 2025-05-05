@@ -4,6 +4,10 @@ import { Memory } from './Memory';
 import { zeros, tensor2d, Tensor } from "@tensorflow/tfjs";
 import GameTable from "./components/game-table.vue";
 
+/**
+ * @deprecated This class is deprecated and will be removed in a future version.
+ * Please use AITrainingService instead.
+ */
 export class Orchestrator {
 	private readonly model: Model;
 	private memory: Memory;
@@ -12,8 +16,9 @@ export class Orchestrator {
 	private gameTable: typeof GameTable;
 	private readonly round_waiting: number;
 	private readonly disable_wait: boolean;
+	private readonly discountRate: number;
 
-	constructor(gameTable: typeof GameTable, model: Model, memory: Memory, maxStepsPerGame: number, round_waiting: number, disable_wait: boolean) {
+	constructor(gameTable: typeof GameTable, model: Model, memory: Memory, maxStepsPerGame: number, round_waiting: number, disable_wait: boolean, discountRate: number = 0.95) {
 		// The main components of the environment
 		this.model = model;
 		this.memory = memory;
@@ -25,6 +30,7 @@ export class Orchestrator {
 
 		this.round_waiting = round_waiting;
 		this.disable_wait = disable_wait;
+		this.discountRate = discountRate;
 	}
 
 	computeReward(position: number[], current_score: number, lost: boolean): number {
