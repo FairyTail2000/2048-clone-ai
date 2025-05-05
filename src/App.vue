@@ -61,10 +61,16 @@
 import { ref, Ref, onMounted, watch, toRaw } from "vue";
 import GameTable from "./components/game-table.vue";
 import * as tfvis from "@tensorflow/tfjs-vis";
-import gameService from "./services/GameService";
-import aiTrainingService from "./services/AITrainingService";
-import modelService from "./services/ModelService";
-import configService from "./services/ConfigService";
+import { initializeServices, getGameService, getAITrainingService, getModelService, getConfigService } from "./services/ServiceContainer";
+
+// Initialize services
+initializeServices();
+
+// Get services from container
+const gameService = getGameService();
+const aiTrainingService = getAITrainingService();
+const modelService = getModelService();
+const configService = getConfigService();
 
 // References to services
 const gameTableRef: Ref<typeof GameTable|null> = ref(null);

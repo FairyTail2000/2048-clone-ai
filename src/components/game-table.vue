@@ -16,7 +16,10 @@
 
 <script lang="ts" setup>
 import { onUnmounted, onMounted, ref, computed } from "vue";
-import gameService from "../services/GameService";
+import { getGameService } from "../services/ServiceContainer";
+
+// Get the game service from the container
+const gameService = getGameService();
 
 const props = defineProps<{ tileSize: number }>();
 

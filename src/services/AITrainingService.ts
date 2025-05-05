@@ -1,8 +1,8 @@
 import { ref, Ref, markRaw } from 'vue';
 import * as tf from '@tensorflow/tfjs';
 import { Tensor, tensor2d, zeros } from '@tensorflow/tfjs';
-import configService from './ConfigService';
-import gameService from './GameService';
+import { ConfigService } from './ConfigService';
+import { GameService } from './GameService';
 import { Memory } from '../Memory';
 import { Model } from '../Model';
 
@@ -18,13 +18,17 @@ export class AITrainingService {
   private noDelay: Ref<boolean>;
   private status: Ref<string> = ref('idle');
   private blockInput: Ref<boolean> = ref(false);
+  private configService: ConfigService;
+  private gameService: GameService;
 
-  constructor() {
-    this.steps = ref(configService.getAIConfig().steps);
-    this.trainingRounds = ref(configService.getAIConfig().trainingRounds);
-    this.memory = ref(markRaw(new Memory(configService.getAIConfig().memorySlots)));
-    this.trainingDelay = ref(configService.getUIConfig().trainingDelay);
-    this.noDelay = ref(configService.getUIConfig().noDelay);
+  constructor(configService: ConfigService, gameService: GameService) {
+    this.configService = configService;
+    this.gameService = gameService;
+    this.steps = ref(this.configService.getAIConfig().steps);
+    this.trainingRounds = ref(this.configService.getAIConfig().trainingRounds);
+    this.memory = ref(markRaw(new Memory(this.configService.getAIConfig().memorySlots)));
+    this.trainingDelay = ref(this.configService.getUIConfig().trainingDelay);
+    this.noDelay = ref(this.configService.getUIConfig().noDelay);
 
     // Set up watchers to update the ConfigService when values change
     this.setupWatchers();
@@ -53,7 +57,7 @@ export class AITrainingService {
 
   public setSteps(steps: number): void {
     this.steps.value = steps;
-    configService.updateAIConfig({ steps });
+    this.configService.updateAIConfig({ steps });
   }
 
   public getTrainingRounds(): Ref<number> {
@@ -62,7 +66,7 @@ export class AITrainingService {
 
   public setTrainingRounds(rounds: number): void {
     this.trainingRounds.value = rounds;
-    configService.updateAIConfig({ trainingRounds: rounds });
+    this.configService.updateAIConfig({ trainingRounds: rounds });
   }
 
   public getTrainingDelay(): Ref<number> {
@@ -71,7 +75,7 @@ export class AITrainingService {
 
   public setTrainingDelay(delay: number): void {
     this.trainingDelay.value = delay;
-    configService.updateUIConfig({ trainingDelay: delay });
+    this.configService.updateUIConfig({ trainingDelay: delay });
   }
 
   public getNoDelay(): Ref<boolean> {
@@ -80,7 +84,7 @@ export class AITrainingService {
 
   public setNoDelay(noDelay: boolean): void {
     this.noDelay.value = noDelay;
-    configService.updateUIConfig({ noDelay });
+    this.configService.updateUIConfig({ noDelay });
   }
 
   public getStatus(): Ref<string> {
@@ -128,16 +132,16 @@ export class AITrainingService {
       return [false, false];
     }
 
-    const state = gameService.getState().value;
+    const state = this.gameService.getState().value;
     const stateTensor: Tensor = tensor2d([state]);
     const action = this.model.value.chooseAction(stateTensor);
-    const ret = gameService.shift(this.actionToDirection(action[0]));
+    const ret = this.gameService.shift(this.actionToDirection(action[0]));
 
     if (!ret) {
       await this.sleep(50);
     }
 
-    return [gameService.isLost().value, gameService.isWon().value];
+    return [this.gameService.isLost().value, this.gameService.isWon().value];
   }
 
   private actionToDirection(action: number): "left" | "right" | "up" | "down" {
@@ -161,7 +165,7 @@ export class AITrainingService {
       return;
     }
 
-    gameService.reset();
+    this.gameService.reset();
     this.blockInput.value = true;
     this.status.value = "Preparing training...";
 
@@ -189,8 +193,8 @@ export class AITrainingService {
         memoryData: [], // We don't transfer memory data yet as it's complex with tensors
         trainingRounds: this.trainingRounds.value,
         steps: this.steps.value,
-        discountRate: configService.getAIConfig().discountRate,
-        tableSize: gameService.getTableSize().value
+        discountRate: this.configService.getAIConfig().discountRate,
+        tableSize: this.gameService.getTableSize().value
       });
 
       // For now, we'll still use the existing training method
@@ -277,23 +281,23 @@ export class AITrainingService {
       return;
     }
 
-    let state: Tensor = tensor2d([gameService.getState().value]);
+    let state: Tensor = tensor2d([this.gameService.getState().value]);
     let totalReward = 0;
     let step = 0;
 
     while (step < this.steps.value) {
       // Interaction with the environment
       const action = this.model.value.chooseAction(state);
-      gameService.shift(this.actionToDirection(action[0]));
+      this.gameService.shift(this.actionToDirection(action[0]));
 
-      const done = gameService.isWon().value || gameService.isLost().value;
+      const done = this.gameService.isWon().value || this.gameService.isLost().value;
       const reward = this.computeReward(
-        gameService.getState().value,
-        gameService.getCurrentScore().value,
-        gameService.isLost().value
+        this.gameService.getState().value,
+        this.gameService.getCurrentScore().value,
+        this.gameService.isLost().value
       );
 
-      let nextState: Tensor = tensor2d([gameService.getState().value]);
+      let nextState: Tensor = tensor2d([this.gameService.getState().value]);
 
       if (done) {
         this.memory.value.addSample([state, action, reward, null]);
@@ -312,7 +316,7 @@ export class AITrainingService {
       }
 
       if (done) {
-        gameService.reset();
+        this.gameService.reset();
       }
 
       if (!this.noDelay.value) {
@@ -321,7 +325,7 @@ export class AITrainingService {
     }
 
     await this.replay();
-    gameService.reset();
+    this.gameService.reset();
   }
 
   private computeReward(position: number[], currentScore: number, lost: boolean): number {
@@ -413,6 +417,4 @@ export class AITrainingService {
   }
 }
 
-// Create a singleton instance
-const aiTrainingService = new AITrainingService();
-export default aiTrainingService;
+// The service will be instantiated by the ServiceContainer
