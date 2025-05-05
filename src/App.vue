@@ -104,7 +104,7 @@ watchEffect(() => {
   if (current_score.value > max_score.value) {
     max_score.value = current_score.value;
   }
-});
+}, { flush: 'post' });
 
 function sleep(time: number) {
   return new Promise<void>((resolve) => {
@@ -182,15 +182,9 @@ async function save() {
     return;
   }
   status.value = "Saving model";
-  const models = await io.listModels();
-  let i = 0;
-  for (const model in models) {
-    i++;
-  }
+  let i = Object.keys(await io.listModels()).length + 1;
   await toRaw(model.value).saveModel(MODEL_SAVE_PATH_ + i);
   status.value = `Saved model as ${MODEL_SAVE_PATH_ + i}`;
-  //Umm, why????
-  //@ts-ignore
   models.value = await io.listModels();
 }
 
@@ -240,11 +234,11 @@ async function train() {
   const surface2 = { name: 'Model Summary', tab: 'Model Layer 2'};
   const surface3 = { name: 'Model Summary', tab: 'Model Layer 3'};
   const surface4 = { name: 'Model Summary', tab: 'Model Layer 4'};
-  tfvis.show.modelSummary(surface, toRaw(model.value.network));
-  tfvis.show.layer(surface1, toRaw(model.value.network.getLayer(undefined, 0)));
-  tfvis.show.layer(surface2, toRaw(model.value.network.getLayer(undefined, 1)));
-  tfvis.show.layer(surface3, toRaw(model.value.network.getLayer(undefined, 2)));
-  tfvis.show.layer(surface4, toRaw(model.value.network.getLayer(undefined, 3)));
+  void tfvis.show.modelSummary(surface, toRaw(model.value.network));
+  void tfvis.show.layer(surface1, toRaw(model.value.network.getLayer(undefined, 0)));
+  void tfvis.show.layer(surface2, toRaw(model.value.network.getLayer(undefined, 1)));
+  void tfvis.show.layer(surface3, toRaw(model.value.network.getLayer(undefined, 2)));
+  void tfvis.show.layer(surface4, toRaw(model.value.network.getLayer(undefined, 3)));
   if (!tfvis.visor().isOpen()) {
     tfvis.visor().open();
   }

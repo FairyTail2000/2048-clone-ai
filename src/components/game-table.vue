@@ -1,17 +1,15 @@
 <template>
-  <div class="game-table">
-    <table>
-      <tbody>
-        <tr v-for="tiles in partition(state, props.tableSize)">
-          <td v-for="tile in tiles">
-            <div class="d-flex align-items-center justify-content-center" :style="{...tile_style, 'background-color': numberToColor[tile]}">
-              {{tile === 0 ? '' : tile}}
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <table>
+    <tbody>
+      <tr v-for="tiles in partition(state, props.tableSize)">
+        <td v-for="tile in tiles">
+          <div class="d-flex align-items-center justify-content-center" :style="{...tile_style, 'background-color': numberToColor[tile]}">
+            {{tile === 0 ? '' : tile}}
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </template>
 
 <script lang="ts" setup>
@@ -200,6 +198,3 @@ defineExpose({
   shift
 });
 </script>
-
-<style scoped lang="sass">
-</style>
