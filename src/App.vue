@@ -1,26 +1,26 @@
 <template>
   <main class="d-flex flex-column gap-1 gap-xl-3 container mt-1">
     <div>
-      Status: {{ aiTrainingService.getStatus().value }}
+      Status: {{ status }}
     </div>
     <div class="d-flex flex-column flex-xl-row gap-3 mt-1">
       <section class="d-flex game flex-column">
-        <game-table ref="gameTableRef" :tile-size="5"/>
-        <button @click="resetGame" :disabled="aiTrainingService.getBlockInput().value" class="btn-danger">reset grid</button>
+        <game-table @lost="lost_fn" @won="won_fn" ref="game_table" v-model:current_score="current_score" :table-size="table_size" :tile-size="5"/>
+        <button @click="clicked" :disabled="block_input" class="btn-danger">reset grid</button>
       </section>
       <section class="d-flex score flex-column gap-1">
         <div class="d-flex flex-column">
-          <span>Aktueller score: <span aria-label="The current score achieved by the ai">{{ gameService.getCurrentScore().value }}</span></span>
-          <span>Max Score: <span aria-label="The max score achieved by the ai">{{ gameService.getMaxScore().value }}</span></span>
+          <span>Aktueller score: <span aria-label="The current score achieved by the ai">{{current_score}}</span></span>
+          <span>Max Score: <span aria-label="The max score achieved by the ai">{{max_score}}</span></span>
           <label for="table_size_input" class="form-label">Table Size</label>
-          <input v-model="tableSize" type="number" min="4" max="50" id="table_size_input" :disabled="aiTrainingService.getBlockInput().value" class="form-control" aria-describedby="table_size_help">
+          <input v-model="table_size" type="number" min="4" max="50" id="table_size_input" :disabled="block_input" class="form-control" aria-describedby="table_size_help">
           <div id="table_size_help" class="form-text">The size of the grid</div>
         </div>
         <div class="d-flex flex-column">
           <div>
             <label for="current_model" class="form-label">Current loaded model</label><br>
-            <select id="current_model" class="form-select" v-model="currentlySelectedModel" :disabled="aiTrainingService.getBlockInput().value" aria-describedby="current_model_help">
-              <option v-for="model in Object.keys(modelService.getModels().value)" :value="model">
+            <select id="current_model" class="form-select" v-model="currently_selected_model" :disabled="block_input" aria-describedby="current_model_help">
+              <option v-for="model in Object.keys(models)" :value="model">
                 {{model}}
               </option>
             </select>
@@ -28,29 +28,29 @@
           </div>
 
           <label for="memory_slots_input" class="form-label">Memory Slots</label>
-          <input type="number" min="1" max="100000" id="memory_slots_input" v-model="memorySlots" :disabled="aiTrainingService.getBlockInput().value" class="form-control" aria-describedby="memory_slots_help">
+          <input type="number" min="1" max="100000" id="memory_slots_input" v-model="memory_slots" :disabled="block_input" class="form-control" aria-describedby="memory_slots_help">
           <div id="memory_slots_help" class="form-text">How much memory to give the neural network</div>
           <label for="training_delay_input" class="form-label">Step delay</label>
           <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="disable_delay" :disabled="aiTrainingService.getBlockInput().value" v-model="noDelay">
+            <input type="checkbox" class="form-check-input" id="disable_delay" :disabled="block_input" v-model="no_delay">
             <label for="disable_delay" class="form-check-label">Disable delay</label>
           </div>
-          <input type="number" min="1" max="10000" id="training_delay_input" v-model="trainingDelay" :disabled="aiTrainingService.getBlockInput().value || noDelay" class="form-control" aria-describedby="training_delay_help">
+          <input type="number" min="1" max="10000" id="training_delay_input" v-model="training_delay" :disabled="block_input || no_delay" class="form-control" aria-describedby="training_delay_help">
           <div id="training_delay_help" class="form-text">How much time between the steps performed by the neural network</div>
           <label for="steps_input" class="form-label">Steps per game</label>
-          <input type="number" min="1" max="10000" id="steps_input" v-model="steps" :disabled="aiTrainingService.getBlockInput().value" class="form-control" aria-describedby="steps_input_help">
+          <input type="number" min="1" max="10000" id="steps_input" v-model="steps" :disabled="block_input" class="form-control" aria-describedby="steps_input_help">
           <div id="steps_input_help" class="form-text">How many steps until the round is complete and the board is reset</div>
           <label for="training_rounds_input" class="form-label">Rounds per training</label>
-          <input type="number" min="1" max="10000" id="training_rounds_input" v-model="trainingRounds" :disabled="aiTrainingService.getBlockInput().value" class="form-control" aria-describedby="steps_input_help">
+          <input type="number" min="1" max="10000" id="training_rounds_input" v-model="training_rounds" :disabled="block_input" class="form-control" aria-describedby="steps_input_help">
           <div id="training_rounds_input_help" class="form-text">How many rounds until the training is complete</div>
         </div>
         <div class="btn-group">
-          <button type="button" class="btn btn-primary" :disabled="aiTrainingService.getBlockInput().value || !aiTrainingService.getModel().value" @click="play">Play a round</button>
-          <button type="button" class="btn btn-primary" :disabled="aiTrainingService.getBlockInput().value" @click="createNewModel">New Model</button>
-          <button type="button" class="btn btn-primary" :disabled="aiTrainingService.getBlockInput().value || !currentlySelectedModel" @click="loadModel" id="load_current_model">Load Model</button>
-          <button type="button" class="btn btn-primary" :disabled="aiTrainingService.getBlockInput().value || !aiTrainingService.getModel().value" @click="train">Train Model</button>
-          <button type="button" class="btn btn-primary" :disabled="aiTrainingService.getBlockInput().value || !aiTrainingService.getModel().value" @click="saveModel">Save current model</button>
-          <button type="button" class="btn btn-warning" :disabled="aiTrainingService.getBlockInput().value || !aiTrainingService.getModel().value" @click="overwriteModel">Overwrite current model</button>
+          <button type="button" class="btn btn-primary" :disabled="block_input || !model" @click="play">Play a round</button>
+          <button type="button" class="btn btn-primary" :disabled="block_input" @click="new_model">New Model</button>
+          <button type="button" class="btn btn-primary" :disabled="block_input || !currently_selected_model" @click="load_model" id="load_current_model">Load Model</button>
+          <button type="button" class="btn btn-primary" :disabled="block_input || !model" @click="train">Train Model</button>
+          <button type="button" class="btn btn-primary" :disabled="block_input || !model" @click="save">Save current model</button>
+          <button type="button" class="btn btn-warning" :disabled="block_input || !model" @click="overwrite">Overwrite current model</button>
         </div>
       </section>
     </div>
@@ -58,107 +58,195 @@
 </template>
 
 <script setup lang="ts">
-import { ref, Ref, onMounted, watch, toRaw } from "vue";
+import {ref, watchEffect, Ref, onMounted, watch, toRaw, onBeforeMount, shallowRef, markRaw} from "vue";
 import GameTable from "./components/game-table.vue";
+import {Orchestrator} from "./Orchestrator";
+import {Memory} from "./Memory";
+import {Model} from "./Model";
+import {io, loadLayersModel} from "@tensorflow/tfjs";
 import * as tfvis from "@tensorflow/tfjs-vis";
-import gameService from "./services/GameService";
-import aiTrainingService from "./services/AITrainingService";
-import modelService from "./services/ModelService";
-import configService from "./services/ConfigService";
 
-// References to services
-const gameTableRef: Ref<typeof GameTable|null> = ref(null);
+const table_size = ref(6);
+const max_score = ref(0);
+const current_score = ref(0);
+const models = ref({});
+const game_table: Ref<typeof GameTable|null> = ref(null);
+const currently_selected_model = ref("");
+const model: Ref<Model|null> = shallowRef(null);
+const memory_slots = ref(5000);
+//@ts-ignore
+const memory: Ref<Memory> = shallowRef(new Memory(memory_slots.value));
+const orchestrator: Ref<Orchestrator|null> = ref(null);
+const training_delay = ref(10);
+const no_delay = ref(true);
+const steps = ref(1000);
+const training_rounds = ref(10);
+const block_input = ref(false);
 
-// UI bindings with two-way data binding to services
-const tableSize = ref(gameService.getTableSize().value);
-const currentlySelectedModel = ref(modelService.getCurrentlySelectedModel().value);
-const memorySlots = ref(configService.getAIConfig().memorySlots);
-const steps = ref(aiTrainingService.getSteps().value);
-const trainingRounds = ref(aiTrainingService.getTrainingRounds().value);
-const trainingDelay = ref(aiTrainingService.getTrainingDelay().value);
-const noDelay = ref(aiTrainingService.getNoDelay().value);
+const status = ref("idle");
 
-// Set up watchers to update services when UI values change
-watch(tableSize, (newValue) => {
-  gameService.setTableSize(newValue);
+const NUMBER_OF_STATES = 36;
+const MODEL_SAVE_PATH_ = 'indexeddb://game-model-'
+
+
+watch([model, memory, steps, training_delay, no_delay], () => {
+  if (!model.value) {
+    return
+  }
+  orchestrator.value = markRaw(new Orchestrator(game_table.value!!, model.value, memory.value, steps.value, training_delay.value, no_delay.value));
 });
 
-watch(currentlySelectedModel, (newValue) => {
-  modelService.setCurrentlySelectedModel(newValue);
+watch(memory_slots, () => {
+  memory.value = markRaw(new Memory(memory_slots.value));
 });
 
-watch(memorySlots, (newValue) => {
-  // This would need to be handled differently since Memory is not a service yet
-  // For now, we'll update the config
-  configService.updateAIConfig({ memorySlots: newValue });
+watchEffect(() => {
+  if (current_score.value > max_score.value) {
+    max_score.value = current_score.value;
+  }
 });
 
-watch(steps, (newValue) => {
-  aiTrainingService.setSteps(newValue);
-});
-
-watch(trainingRounds, (newValue) => {
-  aiTrainingService.setTrainingRounds(newValue);
-});
-
-watch(trainingDelay, (newValue) => {
-  aiTrainingService.setTrainingDelay(newValue);
-});
-
-watch(noDelay, (newValue) => {
-  aiTrainingService.setNoDelay(newValue);
-});
-
-// Game functions
-function resetGame() {
-  gameService.reset();
+function sleep(time: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(() => resolve(), time)
+  })
 }
 
-// Model functions
-async function createNewModel() {
-  await modelService.createNewModel();
+async function load_model() {
+  model.value = markRaw(new Model(NUMBER_OF_STATES, 4, 1, await loadLayersModel(currently_selected_model.value)));
 }
 
-async function loadModel() {
-  await modelService.loadModel();
+async function new_model() {
+  model.value = markRaw(new Model(NUMBER_OF_STATES, 4, 1))
 }
 
-async function saveModel() {
-  await modelService.saveModel();
-}
-
-async function overwriteModel() {
-  await modelService.overwriteModel();
-}
-
-// AI Training functions
 async function play() {
-  await aiTrainingService.play();
+  if (!orchestrator.value) {
+    console.error("No orchestrator!");
+    return
+  }
+  status.value = "Playing"
+  block_input.value = true;
+  let needed_steps = 0;
+  while (true) {
+    const [lost, won] = await orchestrator.value.just_play();
+    needed_steps++;
+    if (lost || won) {
+      break
+    }
+    await sleep(training_delay.value)
+  }
+  status.value = "idle"
+  block_input.value = false;
+  console.log("Steps performed:", needed_steps);
+}
+
+onBeforeMount(() => {
+  const settings_string = localStorage.getItem("settings");
+  if (settings_string) {
+    const settings = JSON.parse(settings_string);
+    memory_slots.value = settings["memory_slots"]
+    steps.value = settings["steps"]
+    training_rounds.value = settings["training_rounds"]
+    no_delay.value = settings["no_delay"]
+    table_size.value = settings["table_size"]
+    training_delay.value = settings["training_delay"]
+  }
+  watch([memory_slots, steps, training_rounds, no_delay, table_size, training_delay], ([memory_slots, steps, training_rounds, no_delay, table_size, training_delay]) => {
+    const save_obj = {
+      memory_slots, steps, training_rounds, no_delay, table_size, training_delay
+    }
+    localStorage.setItem("settings", JSON.stringify(save_obj))
+  });
+});
+
+onMounted(async () => {
+  models.value = await io.listModels();
+});
+
+function lost_fn() {
+  console.log("You lost");
+}
+
+function won_fn() {
+  console.log("You won");
+}
+
+function clicked() {
+  game_table.value?.reset()
+}
+
+async function save() {
+  if (!model.value) {
+    console.error("No model");
+    return;
+  }
+  status.value = "Saving model";
+  const models = await io.listModels();
+  let i = 0;
+  for (const model in models) {
+    i++;
+  }
+  await toRaw(model.value).saveModel(MODEL_SAVE_PATH_ + i);
+  status.value = `Saved model as ${MODEL_SAVE_PATH_ + i}`;
+  //Umm, why????
+  //@ts-ignore
+  models.value = await io.listModels();
+}
+
+async function overwrite() {
+  if (!currently_selected_model.value) {
+    console.error("No currently selected model");
+    return
+  }
+  if (!model.value) {
+    console.error("No model");
+    return;
+  }
+  status.value = `Saving model as ${currently_selected_model.value}`;
+  await toRaw(model.value).saveModel(currently_selected_model.value);
+  status.value = `Saved model as ${currently_selected_model.value}`;
 }
 
 async function train() {
-  await aiTrainingService.train();
+  if (!orchestrator.value) {
+    console.error("No Orchestrator");
+    return;
+  }
+  if (!model.value) {
+    console.error("No model");
+    return;
+  }
+  if (!game_table.value) {
+    console.error("No game table")
+    return;
+  }
 
-  // Show model visualization
-  const model = aiTrainingService.getModel().value;
-  if (model) {
-    const surface = { name: 'Model Summary', tab: 'Model Inspection'};
-    const surface1 = { name: 'Model Summary', tab: 'Model Layer 1'};
-    const surface2 = { name: 'Model Summary', tab: 'Model Layer 2'};
-    const surface3 = { name: 'Model Summary', tab: 'Model Layer 3'};
-    const surface4 = { name: 'Model Summary', tab: 'Model Layer 4'};
-    tfvis.show.modelSummary(surface, toRaw(model.network));
-    tfvis.show.layer(surface1, toRaw(model.network.getLayer(undefined, 0)));
-    tfvis.show.layer(surface2, toRaw(model.network.getLayer(undefined, 1)));
-    tfvis.show.layer(surface3, toRaw(model.network.getLayer(undefined, 2)));
-    tfvis.show.layer(surface4, toRaw(model.network.getLayer(undefined, 3)));
-    if (!tfvis.visor().isOpen()) {
-      tfvis.visor().open();
+  game_table.value.reset();
+  block_input.value = true;
+  await sleep(100);
+  for (let i = 0; i < training_rounds.value; i++) {
+    status.value = `Training round ${i+1}`;
+    console.log(`Training round ${i+1}`);
+    await orchestrator.value.run();
+    if (!no_delay.value) {
+      await sleep(100);
     }
   }
+  block_input.value = false;
+  status.value = "idle";
+  const surface = { name: 'Model Summary', tab: 'Model Inspection'};
+  const surface1 = { name: 'Model Summary', tab: 'Model Layer 1'};
+  const surface2 = { name: 'Model Summary', tab: 'Model Layer 2'};
+  const surface3 = { name: 'Model Summary', tab: 'Model Layer 3'};
+  const surface4 = { name: 'Model Summary', tab: 'Model Layer 4'};
+  tfvis.show.modelSummary(surface, toRaw(model.value.network));
+  tfvis.show.layer(surface1, toRaw(model.value.network.getLayer(undefined, 0)));
+  tfvis.show.layer(surface2, toRaw(model.value.network.getLayer(undefined, 1)));
+  tfvis.show.layer(surface3, toRaw(model.value.network.getLayer(undefined, 2)));
+  tfvis.show.layer(surface4, toRaw(model.value.network.getLayer(undefined, 3)));
+  if (!tfvis.visor().isOpen()) {
+    tfvis.visor().open();
+  }
 }
-
-onMounted(async () => {
-  // Initialize services if needed
-});
 </script>
