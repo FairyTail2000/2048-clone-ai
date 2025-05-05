@@ -1,5 +1,5 @@
 import { ref, Ref } from 'vue';
-import { ConfigService } from './ConfigService';
+import configService from './ConfigService';
 
 export interface GameState {
   state: number[];
@@ -15,11 +15,9 @@ export class GameService {
   private won: Ref<boolean> = ref(false);
   private lost: Ref<boolean> = ref(false);
   private tableSize: Ref<number>;
-  private configService: ConfigService;
 
-  constructor(configService: ConfigService) {
-    this.configService = configService;
-    this.tableSize = ref(this.configService.getGameConfig().tableSize);
+  constructor() {
+    this.tableSize = ref(configService.getGameConfig().tableSize);
     this.state = ref(new Array(this.tableSize.value * this.tableSize.value).fill(0));
     this.reset();
   }
@@ -50,7 +48,7 @@ export class GameService {
 
   public setTableSize(size: number): void {
     this.tableSize.value = size;
-    this.configService.updateGameConfig({ tableSize: size });
+    configService.updateGameConfig({ tableSize: size });
     this.reset();
   }
 
@@ -191,4 +189,6 @@ export class GameService {
   }
 }
 
-// The service will be instantiated by the ServiceContainer
+// Create a singleton instance
+const gameService = new GameService();
+export default gameService;

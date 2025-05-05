@@ -42,42 +42,42 @@ const DEFAULT_CONFIG: AppConfig = {
   }
 };
 
-export class ConfigService {
+class ConfigService {
   private config: AppConfig;
-
+  
   constructor() {
     // Initialize with default values
     this.config = reactive({ ...DEFAULT_CONFIG });
-
+    
     // Load saved configuration from localStorage if available
     this.loadConfig();
-
+    
     // Set up watcher to save changes to localStorage
     watch(() => this.config, () => {
       this.saveConfig();
     }, { deep: true });
   }
-
+  
   // Get the entire configuration
   public getConfig(): AppConfig {
     return this.config;
   }
-
+  
   // Get game configuration
   public getGameConfig(): GameConfig {
     return this.config.game;
   }
-
+  
   // Get AI configuration
   public getAIConfig(): AIConfig {
     return this.config.ai;
   }
-
+  
   // Get UI configuration
   public getUIConfig(): UIConfig {
     return this.config.ui;
   }
-
+  
   // Update the entire configuration
   public updateConfig(newConfig: Partial<AppConfig>): void {
     if (newConfig.game) {
@@ -90,27 +90,27 @@ export class ConfigService {
       Object.assign(this.config.ui, newConfig.ui);
     }
   }
-
+  
   // Update game configuration
   public updateGameConfig(gameConfig: Partial<GameConfig>): void {
     Object.assign(this.config.game, gameConfig);
   }
-
+  
   // Update AI configuration
   public updateAIConfig(aiConfig: Partial<AIConfig>): void {
     Object.assign(this.config.ai, aiConfig);
   }
-
+  
   // Update UI configuration
   public updateUIConfig(uiConfig: Partial<UIConfig>): void {
     Object.assign(this.config.ui, uiConfig);
   }
-
+  
   // Reset configuration to defaults
   public resetConfig(): void {
     Object.assign(this.config, DEFAULT_CONFIG);
   }
-
+  
   // Load configuration from localStorage
   private loadConfig(): void {
     const savedConfig = localStorage.getItem('appConfig');
@@ -123,11 +123,14 @@ export class ConfigService {
       }
     }
   }
-
+  
   // Save configuration to localStorage
   private saveConfig(): void {
     localStorage.setItem('appConfig', JSON.stringify(this.config));
   }
 }
 
-// The service will be instantiated by the ServiceContainer
+// Create a singleton instance
+const configService = new ConfigService();
+
+export default configService;
