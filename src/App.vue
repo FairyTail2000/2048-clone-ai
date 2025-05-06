@@ -37,6 +37,11 @@
           </div>
           <input type="number" min="1" max="10000" id="training_delay_input" v-model="training_delay" :disabled="block_input || no_delay" class="form-control" aria-describedby="training_delay_help">
           <div id="training_delay_help" class="form-text">How much time between the steps performed by the neural network</div>
+
+          <label for="batch_size_help_input" class="form-label">Batch Size</label>
+          <input type="number" min="1" max="10000" id="batch_size_help_input" v-model="batch_size" :disabled="block_input" class="form-control" aria-describedby="batch_size_help">
+          <div id="batch_size_help" class="form-text">How many samples the model gets when replaying</div>
+
           <label for="steps_input" class="form-label">Steps per game</label>
           <input type="number" min="1" max="10000" id="steps_input" v-model="steps" :disabled="block_input" class="form-control" aria-describedby="steps_input_help">
           <div id="steps_input_help" class="form-text">How many steps until the round is complete and the board is reset</div>
@@ -87,7 +92,6 @@ const batch_size = ref(64);
 
 const status = ref("idle");
 
-const NUMBER_OF_STATES = 36;
 const MODEL_SAVE_PATH_ = 'indexeddb://game-model-'
 
 
@@ -115,11 +119,11 @@ function sleep(time: number) {
 }
 
 async function load_model() {
-  model.value = markRaw(new Model(NUMBER_OF_STATES, 4, batch_size.value, await loadLayersModel(currently_selected_model.value)));
+  model.value = markRaw(new Model(table_size.value * table_size.value, 4, batch_size.value, await loadLayersModel(currently_selected_model.value)));
 }
 
 async function new_model() {
-  model.value = markRaw(new Model(NUMBER_OF_STATES, 4, batch_size.value))
+  model.value = markRaw(new Model(table_size.value * table_size.value, 4, batch_size.value))
 }
 
 async function play() {
