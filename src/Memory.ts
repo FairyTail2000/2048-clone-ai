@@ -1,17 +1,21 @@
+import { Tensor } from "@tensorflow/tfjs";
+
+type MemoryCell = [Tensor,  Float32Array<ArrayBufferLike> | Int32Array<ArrayBufferLike> | Uint8Array<ArrayBufferLike>, number, Tensor | null];
+
+
 export class Memory {
 	private readonly maxMemory: number;
-	private readonly samples: any[];
+	private readonly samples: MemoryCell[];
 	private it = 0;
 
 	constructor(maxMemory: number) {
 		this.maxMemory = maxMemory;
 		this.samples = new Array(maxMemory);
 	}
-
-	addSample(sample: any[]) {
+	addSample(sample: MemoryCell) {
 		this.samples[this.it++] = sample;
 		if (this.it > this.maxMemory) {
-			let [state, , , nextState] = this.samples.shift();
+			let [state, , , nextState] = this.samples.shift()!;
 			if (state) state.dispose();
 			if (nextState) nextState.dispose();
 			this.it--;
@@ -19,8 +23,8 @@ export class Memory {
 	}
 
 	sample(nSamples: number) {
-		// Get all available samples (filter out undefined entries)
-		const availableSamples = this.samples.filter(s => s !== undefined);
+		// Get all available samples (filter out null/undefined entries)
+		const availableSamples = this.samples.filter(s => s != null && s[3] !== null);
 
 		// Calculate how many samples we can actually return
 		const actualSamples = Math.min(nSamples, availableSamples.length);
@@ -42,7 +46,7 @@ export class Memory {
 
 		// For smaller sample sizes, use a more efficient approach with a Set
 		const selectedIndices = new Set<number>();
-		const result = [];
+		const result: MemoryCell[] = [];
 
 		// Keep selecting unique random indices until we have enough samples
 		while (selectedIndices.size < actualSamples) {
@@ -55,4 +59,5 @@ export class Memory {
 		}
 
 		return result;
-	}}
+	}
+}

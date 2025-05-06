@@ -82,6 +82,7 @@ const no_delay = ref(true);
 const steps = ref(1000);
 const training_rounds = ref(10);
 const block_input = ref(false);
+const batch_size = ref(64);
 
 const status = ref("idle");
 
@@ -113,11 +114,11 @@ function sleep(time: number) {
 }
 
 async function load_model() {
-  model.value = markRaw(new Model(NUMBER_OF_STATES, 4, 1, await loadLayersModel(currently_selected_model.value)));
+  model.value = markRaw(new Model(NUMBER_OF_STATES, 4, batch_size.value, await loadLayersModel(currently_selected_model.value)));
 }
 
 async function new_model() {
-  model.value = markRaw(new Model(NUMBER_OF_STATES, 4, 1))
+  model.value = markRaw(new Model(NUMBER_OF_STATES, 4, batch_size.value))
 }
 
 async function play() {
@@ -127,6 +128,7 @@ async function play() {
   }
   status.value = "Playing"
   block_input.value = true;
+  game_table.value?.reset();
   let needed_steps = 0;
   while (true) {
     const [lost, won] = await orchestrator.value.just_play();
@@ -151,10 +153,11 @@ onBeforeMount(() => {
     no_delay.value = settings["no_delay"]
     table_size.value = settings["table_size"]
     training_delay.value = settings["training_delay"]
+    batch_size.value = settings["batch_size"] ?? 64
   }
-  watch([memory_slots, steps, training_rounds, no_delay, table_size, training_delay], ([memory_slots, steps, training_rounds, no_delay, table_size, training_delay]) => {
+  watch([memory_slots, steps, training_rounds, no_delay, table_size, training_delay, batch_size], ([memory_slots, steps, training_rounds, no_delay, table_size, training_delay, batch_size]) => {
     const save_obj = {
-      memory_slots, steps, training_rounds, no_delay, table_size, training_delay
+      memory_slots, steps, training_rounds, no_delay, table_size, training_delay, batch_size
     }
     localStorage.setItem("settings", JSON.stringify(save_obj))
   });

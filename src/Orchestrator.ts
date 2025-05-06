@@ -53,16 +53,17 @@ export class Orchestrator {
 
 		if (current_score < 100) {
 			reward -= 10;
-		} else if (current_score < 200) {
+		} else if (current_score < 400) {
 			reward += 10;
-		} else if (current_score < 300) {
+		} else if (current_score < 600) {
 			reward += 20;
-		} else if (current_score >= 300) {
+		} else if (current_score > 600) {
 			reward += 40;
 		}
 
 		if (lost) {
-			reward -= 50;
+			// You imbecile
+			reward *= 0.2;
 		}
 		return reward;
 	}
@@ -148,9 +149,24 @@ export class Orchestrator {
 			([, , , nextState]) => nextState ? nextState : zeros([this.model.numStates])
 		);
 		// Predict the values of each action at each state
-		const qsa = states.map((state) => this.model.predict(state));
+		const qsa = states.map((state) => {
+			try {
+				return this.model.predict(state);
+			} catch (e) {
+				console.error("Failed to predict for tensor: " + state);
+				throw e;
+			}
+		});
 		// Predict the values of each action at each next state
-		const qsad = nextStates.map((nextState) => this.model.predict(nextState));
+		const qsad = nextStates.map((nextState) => {
+			try {
+				return this.model.predict(nextState);
+			} catch (e) {
+				console.error("Failed to predict for tensor: " + nextState);
+				throw e;
+			}
+
+		});
 
 		let x: any[] | Tensor = [];
 		let y: any[] | Tensor = [];
