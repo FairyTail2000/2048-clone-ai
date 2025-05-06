@@ -3,7 +3,7 @@
     <tbody>
       <tr v-for="tiles in partition(state, props.tableSize)">
         <td v-for="tile in tiles">
-          <div class="d-flex align-items-center justify-content-center" :style="{...tile_style, 'background-color': numberToColor[tile]}">
+          <div class="d-flex align-items-center justify-content-center target" :style="{'background-color': numberToColor[tile]}">
             {{tile === 0 ? '' : tile}}
           </div>
         </td>
@@ -32,16 +32,9 @@ const numberToColor = {
   2048: "#0017ff"
 }
 
-const props = defineProps<{ current_score: number, tableSize: number, tileSize: number }>();
+const props = defineProps<{ current_score: number, tableSize: number }>();
 
 const state: Ref<number[]> = ref(new Array(props.tableSize*props.tableSize).fill(0));
-
-const tile_style = ref({
-    "min-height": props.tileSize + "rem",
-    "height": props.tileSize + "rem",
-    "min-width": props.tileSize + "rem",
-    "width": props.tileSize + "rem",
-});
 
 const lost = ref(false);
 const won = ref(false);
@@ -49,7 +42,7 @@ const won = ref(false);
 function partition(items: any[], size: number): (0|2|4|8|16|32|64|128|256|512|2048)[][] {
   const p = [];
   for (let i = Math.floor(items.length/size); i-->0; ) {
-    p[i]=items.slice(i*size, (i+1)*size);
+    p[i] = items.slice(i*size, (i+1)*size);
   }
   return p;
 }
@@ -69,7 +62,7 @@ function generate_tile() {
     lost.value = true;
     emit("lost");
   } else {
-    state.value[indexes[Math.floor((Math.random() * indexes.length))]] = 2;
+    state.value[indexes[Math.floor(Math.random() * indexes.length)]] = 2;
   }
 }
 
@@ -198,3 +191,23 @@ defineExpose({
   shift
 });
 </script>
+
+<style scoped lang="sass">
+
+$small-size: 3rem
+$big-size: 5rem
+@media (max-width: 767.98px)
+  .target
+    min-height: $small-size
+    height: $small-size
+    min-width: $small-size
+    width: $small-size
+
+@media (min-width: 768px)
+  .target
+    min-height: $big-size
+    height: $big-size
+    min-width: $big-size
+    width: $big-size
+
+</style>

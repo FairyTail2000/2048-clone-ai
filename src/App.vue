@@ -3,17 +3,17 @@
     <div>
       Status: {{ status }}
     </div>
-    <div class="d-flex flex-column flex-xl-row gap-3 mt-1">
-      <section class="d-flex game flex-column">
-        <game-table @lost="lost_fn" @won="won_fn" ref="game_table" v-model:current_score="current_score" :table-size="table_size" :tile-size="5"/>
-        <button @click="clicked" :disabled="block_input" class="btn-danger">reset grid</button>
+    <div class="d-flex flex-column flex-lg-row gap-3 mt-1">
+      <section class="d-flex flex-column row-gap-1">
+        <game-table @lost="lost_fn" @won="won_fn" ref="game_table" v-model:current_score="current_score" :table-size="table_size" />
+        <button @click="clicked" :disabled="block_input" class="btn btn-danger">reset grid</button>
       </section>
       <section class="d-flex score flex-column gap-1">
         <div class="d-flex flex-column">
           <span>Aktueller score: <span aria-label="The current score achieved by the ai">{{current_score}}</span></span>
           <span>Max Score: <span aria-label="The max score achieved by the ai">{{max_score}}</span></span>
           <label for="table_size_input" class="form-label">Table Size</label>
-          <input v-model="table_size" type="number" min="4" max="50" id="table_size_input" :disabled="block_input" class="form-control" aria-describedby="table_size_help">
+          <input v-model="table_size" type="number" min="4" max="50" id="table_size_input" :disabled="true" class="form-control" aria-describedby="table_size_help">
           <div id="table_size_help" class="form-text">The size of the grid</div>
         </div>
         <div class="d-flex flex-column">
@@ -51,6 +51,7 @@
           <button type="button" class="btn btn-primary" :disabled="block_input || !model" @click="train">Train Model</button>
           <button type="button" class="btn btn-primary" :disabled="block_input || !model" @click="save">Save current model</button>
           <button type="button" class="btn btn-warning" :disabled="block_input || !model" @click="overwrite">Overwrite current model</button>
+          <button type="button" class="btn btn-danger" :disabled="block_input || !currently_selected_model" @click="delete_model">Delete current model</button>
         </div>
       </section>
     </div>
@@ -177,6 +178,12 @@ function won_fn() {
 
 function clicked() {
   game_table.value?.reset()
+}
+
+async function delete_model() {
+  await io.removeModel(currently_selected_model.value);
+  currently_selected_model.value = "";
+  models.value = await io.listModels();
 }
 
 async function save() {

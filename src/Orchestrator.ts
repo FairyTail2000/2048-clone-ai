@@ -184,12 +184,6 @@ export class Orchestrator {
 			}
 		);
 
-		// Clean unused tensors
-		//@ts-ignore
-		qsa.forEach((state) => state.dispose());
-		//@ts-ignore
-		qsad.forEach((state) => state.dispose());
-
 		// Reshape the batches to be fed to the network
 		x = tensor2d(x, [x.length, this.model.numStates])
 		y = tensor2d(y, [y.length, this.model.numActions])
