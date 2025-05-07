@@ -8,7 +8,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          "tfjs-vis": ["@tensorflow/tfjs-vis"],
           "tfjs": ["@tensorflow/tfjs"]
         },
       },

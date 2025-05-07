@@ -1,14 +1,13 @@
 version: "3"
 
 services:
-  nginx:
+  web:
     build:
       context: .
       dockerfile: Dockerfile
     read_only: true
     security_opt:
       - no-new-privileges
-    container_name: nginx
     ports:
       - "8000:80"
     tmpfs:

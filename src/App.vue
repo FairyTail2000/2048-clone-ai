@@ -91,7 +91,6 @@ import {Orchestrator} from "./Orchestrator";
 import {Memory} from "./Memory";
 import {Model} from "./Model";
 import {io, loadLayersModel} from "@tensorflow/tfjs";
-import * as tfvis from "@tensorflow/tfjs-vis";
 import {Toast} from "bootstrap";
 
 const table_size = ref(6);
@@ -257,28 +256,15 @@ async function train() {
   block_input.value = true;
   await sleep(100);
   for (let i = 0; i < training_rounds.value; i++) {
-    status.value = `Training round ${i+1}`;
+    status.value = `Training round ${i+1}/${training_rounds.value}`;
     console.log(`Training round ${i+1}`);
     await orchestrator.value.run();
     if (!no_delay.value) {
-      await sleep(100);
+      await sleep(0);
     }
   }
   block_input.value = false;
   status.value = "idle";
-  const surface = { name: 'Model Summary', tab: 'Model Inspection'};
-  const surface1 = { name: 'Model Summary', tab: 'Model Layer 1'};
-  const surface2 = { name: 'Model Summary', tab: 'Model Layer 2'};
-  const surface3 = { name: 'Model Summary', tab: 'Model Layer 3'};
-  const surface4 = { name: 'Model Summary', tab: 'Model Layer 4'};
-  void tfvis.show.modelSummary(surface, toRaw(model.value.network));
-  void tfvis.show.layer(surface1, toRaw(model.value.network.getLayer(undefined, 0)));
-  void tfvis.show.layer(surface2, toRaw(model.value.network.getLayer(undefined, 1)));
-  void tfvis.show.layer(surface3, toRaw(model.value.network.getLayer(undefined, 2)));
-  void tfvis.show.layer(surface4, toRaw(model.value.network.getLayer(undefined, 3)));
-  if (!tfvis.visor().isOpen()) {
-    tfvis.visor().open();
-  }
 }
 
 window.addEventListener('error', function(event) {
