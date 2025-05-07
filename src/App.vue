@@ -61,22 +61,45 @@
       </section>
     </div>
   </main>
+  <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="liveToast" ref="liveToast" class="toast text-bg-danger" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+      <div class="toast-header">
+        <strong class="me-auto">Error</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+        An error occurred. More details in the console.
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import {ref, watchEffect, Ref, onMounted, watch, toRaw, onBeforeMount, shallowRef, markRaw} from "vue";
+import {
+  ref,
+  watchEffect,
+  Ref,
+  onMounted,
+  watch,
+  toRaw,
+  onBeforeMount,
+  shallowRef,
+  markRaw,
+} from "vue";
 import GameTable from "./components/game-table.vue";
 import {Orchestrator} from "./Orchestrator";
 import {Memory} from "./Memory";
 import {Model} from "./Model";
 import {io, loadLayersModel} from "@tensorflow/tfjs";
 import * as tfvis from "@tensorflow/tfjs-vis";
+import {Toast} from "bootstrap";
 
 const table_size = ref(6);
 const max_score = ref(0);
 const current_score = ref(0);
 const models = ref({});
 const game_table: Ref<typeof GameTable|null> = ref(null);
+const liveToast: Ref<HTMLDivElement|null> = ref(null);
 const currently_selected_model = ref("");
 const model: Ref<Model|null> = shallowRef(null);
 const memory_slots = ref(5000);
@@ -257,4 +280,18 @@ async function train() {
     tfvis.visor().open();
   }
 }
+
+window.addEventListener('error', function(event) {
+  console.error('Error captured:', event)
+  const toastBootstrap = Toast.getOrCreateInstance(liveToast.value!);
+  toastBootstrap.show();
+  event.preventDefault();
+});
+
+window.addEventListener('unhandledrejection', function(event) {
+  console.error('Error captured:', event)
+  const toastBootstrap = Toast.getOrCreateInstance(liveToast.value!);
+  toastBootstrap.show();
+  event.preventDefault();
+});
 </script>
