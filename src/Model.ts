@@ -7,7 +7,7 @@ export class Model {
 	readonly batchSize: number;
 	network: Sequential;
 
-	constructor(numStates: number, numAction: number, batchSize: number, model?: LayersModel) {
+	constructor(numStates: number, numAction: number, batchSize: number, model?: LayersModel, learningRate: number = 0.001) {
 		this.numStates = numStates;
 		this.numActions = numAction;
 		this.batchSize = batchSize;
@@ -23,7 +23,7 @@ export class Model {
 				inputShape: [this.numStates],
 			}));
 			this.network.add(layers.batchNormalization());
-			this.network.add(layers.dropout(0.2));
+			this.network.add(layers.dropout({rate: 0.2}));
 
 			// Hidden layer 1
 			this.network.add(layers.dense({
@@ -31,7 +31,7 @@ export class Model {
 				activation: 'relu',
 			}));
 			this.network.add(layers.batchNormalization());
-			this.network.add(layers.dropout(0.2));
+			this.network.add(layers.dropout({rate: 0.2}));
 
 			// Hidden layer 2
 			this.network.add(layers.dense({
@@ -48,7 +48,7 @@ export class Model {
 		}
 		this.network.summary();
 		this.network.compile({
-			optimizer: train.adam(0.001),
+			optimizer: train.adam(learningRate),
 			loss: 'meanSquaredError'
 		});
 	}

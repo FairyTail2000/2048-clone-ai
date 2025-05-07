@@ -12,6 +12,7 @@ export class Orchestrator {
 	private gameTable: typeof GameTable;
 	private readonly round_waiting: number;
 	private readonly disable_wait: boolean;
+	private discountRate: number = 0.95;
 
 	constructor(gameTable: typeof GameTable, model: Model, memory: Memory, maxStepsPerGame: number, round_waiting: number, disable_wait: boolean) {
 		// The main components of the environment
@@ -27,44 +28,28 @@ export class Orchestrator {
 		this.disable_wait = disable_wait;
 	}
 
-	computeReward(position: number[], current_score: number, lost: boolean): number {
+	computeReward(position: number[], current_score: number, lost: boolean, won: boolean): number {
 		let reward = 0;
-		let max_value = position.reduce((previousValue, currentValue) => {
-			if (previousValue < currentValue) {
-				return currentValue;
-			} else {
-				return previousValue;
-			}
-		});
 
-		if (max_value <= 64) {
-			reward = 5;
-		} else if (max_value === 128) {
-			reward = 20;
-		} else if (max_value === 256) {
-			reward = 40;
-		} else if (max_value === 512) {
-			reward = 60;
-		} else if (max_value === 1024) {
-			reward = 80;
-		} else if (max_value === 2048) {
-			reward = 100;
-		}
+		// Find max tile value
+		let max_value = Math.max(...position);
 
-		if (current_score < 100) {
-			reward -= 10;
-		} else if (current_score < 400) {
-			reward += 10;
-		} else if (current_score < 600) {
-			reward += 20;
-		} else if (current_score > 600) {
-			reward += 40;
-		}
+		// Reward based on max tile
+		if (max_value >= 2048) reward += 10000;  // Major reward for reaching 2048
+		else if (max_value >= 1024) reward += 1000;
+		else if (max_value >= 512) reward += 500;
+		else if (max_value >= 256) reward += 250;
+		else if (max_value >= 128) reward += 125;
+		else reward += max_value / 2;  // Small linear reward for low values
 
-		if (lost) {
-			// You imbecile
-			reward *= 0.2;
-		}
+		// Add score component (smaller influence)
+		reward += current_score / 20;
+
+		// Game outcome multipliers
+		if (won) reward *= 1.5;  // Bonus for winning
+		// You absolute doorknob
+		if (lost) reward *= 0.1;  // Severe penalty for losing
+
 		return reward;
 	}
 
@@ -108,7 +93,7 @@ export class Orchestrator {
 			this.gameTable.shift(this.actionToAction(action[0]));
 
 			const done = this.gameTable.won || this.gameTable.lost;
-			const reward = this.computeReward(this.gameTable.state, this.gameTable.current_score, this.gameTable.lost);
+			const reward = this.computeReward(this.gameTable.state, this.gameTable.current_score, this.gameTable.lost, this.gameTable.won);
 
 			let nextState: Tensor = tensor2d([this.gameTable.state]);
 
@@ -142,56 +127,48 @@ export class Orchestrator {
 	}
 
 	async replay() {
-		// Sample from memory
 		const batch = this.memory.sample(this.model.batchSize);
-		const states = batch.map(([state, , , ]) => state);
-		const nextStates = batch.map(
-			([, , , nextState]) => nextState ? nextState : zeros([this.model.numStates])
-		);
-		// Predict the values of each action at each state
-		const qsa = states.map((state) => {
-			try {
-				return this.model.predict(state);
-			} catch (e) {
-				console.error("Failed to predict for tensor: " + state);
-				throw e;
+
+		// Create arrays for inputs and targets
+		let x: any[] = [];
+		let y: any[] = [];
+
+		// Process each experience in the batch
+		for (let i = 0; i < batch.length; i++) {
+			const [state, action, reward, nextState] = batch[i];
+
+			// Get current Q values for this state
+			const currentQ = (this.model.predict(state) as any).dataSync();
+
+			if (nextState === null) {
+				// Terminal state - only use the reward
+				// @ts-ignore
+				currentQ[action] = reward;
+			} else {
+				// Non-terminal state - use reward plus discounted future reward
+				const nextQ = this.model.predict(nextState);
+				// @ts-ignore
+				const maxNextQ = nextQ.max().dataSync()[0];
+				// @ts-ignore
+				currentQ[action] = reward + this.discountRate * maxNextQ;
+				// @ts-ignore
+				nextQ.dispose();
 			}
-		});
-		// Predict the values of each action at each next state
-		const qsad = nextStates.map((nextState) => {
-			try {
-				return this.model.predict(nextState);
-			} catch (e) {
-				console.error("Failed to predict for tensor: " + nextState);
-				throw e;
-			}
 
-		});
+			// Add to training batch
+			x.push(state.dataSync());
+			y.push(currentQ);
+		}
 
-		let x: any[] | Tensor = [];
-		let y: any[] | Tensor = [];
+		// Convert to tensors for training
+		const xTensor = tensor2d(x, [x.length, this.model.numStates]);
+		const yTensor = tensor2d(y, [y.length, this.model.numActions]);
 
-		// Update the states rewards with the discounted next states rewards
-		batch.forEach(
-			([state, action, reward, nextState], index) => {
-				const currentQ: any = qsa[index];
-				//@ts-ignore
-				currentQ[action] = nextState ? reward + this.discountRate * qsad[index].max().dataSync() : reward;
-				//@ts-ignore
-				x.push(state.dataSync());
-				//@ts-ignore
-				y.push(currentQ.dataSync());
-			}
-		);
+		// Train the model
+		await this.model.train(xTensor, yTensor);
 
-		// Reshape the batches to be fed to the network
-		x = tensor2d(x, [x.length, this.model.numStates])
-		y = tensor2d(y, [y.length, this.model.numActions])
-
-		// Learn the Q(s, a) values given associated discounted rewards
-		await this.model.train(x, y);
-
-		x.dispose();
-		y.dispose();
+		// Clean up
+		xTensor.dispose();
+		yTensor.dispose();
 	}
 }

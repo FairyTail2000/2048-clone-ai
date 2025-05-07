@@ -38,6 +38,7 @@ const state: Ref<number[]> = ref(new Array(props.tableSize*props.tableSize).fill
 
 const lost = ref(false);
 const won = ref(false);
+const current_for_orchestrator = ref(props.current_score);
 
 function partition(items: any[], size: number): (0|2|4|8|16|32|64|128|256|512|2048)[][] {
   const p = [];
@@ -76,7 +77,8 @@ function shift(direction: "left" | "right" | "up" | "down") {
         for (let j = (state.value.length / props.tableSize) * i + 1; j < (state.value.length / props.tableSize) * (i + 1); j++) {
           if (state.value[j] !== 0 && (state.value[j] === state.value[j - 1] || state.value[j - 1] === 0)) {
             if (state.value[j] === state.value[j - 1]) {
-              emit("update:current_score", props.current_score + 2);
+              current_for_orchestrator.value += 2;
+              emit("update:current_score", current_for_orchestrator);
             }
             state.value[j - 1] += state.value[j];
             state.value[j] = 0;
@@ -93,7 +95,8 @@ function shift(direction: "left" | "right" | "up" | "down") {
         for (let j = i * props.tableSize; j < (i*props.tableSize) + props.tableSize; j++) {
           if (state.value[j] !== 0 && (state.value[j] === state.value[j + props.tableSize] || state.value[j + props.tableSize] === 0)) {
             if (state.value[j] === state.value[j + props.tableSize]) {
-              emit("update:current_score", props.current_score + 2);
+              current_for_orchestrator.value += 2;
+              emit("update:current_score", current_for_orchestrator);
             }
             state.value[j + props.tableSize] += state.value[j];
             state.value[j] = 0;
@@ -111,7 +114,8 @@ function shift(direction: "left" | "right" | "up" | "down") {
         for (let j = ((props.tableSize * (i - 1)) + props.tableSize) - 1; j > ((i - 1) * props.tableSize); j--) {
           if (state.value[j - 1] !== 0 && (state.value[j] === state.value[j - 1] || state.value[j] === 0)) {
             if (state.value[j] === state.value[j - 1]) {
-              emit("update:current_score", props.current_score + 2);
+              current_for_orchestrator.value += 2;
+              emit("update:current_score", current_for_orchestrator);
             }
             state.value[j] += state.value[j - 1];
             state.value[j - 1] = 0;
@@ -128,7 +132,8 @@ function shift(direction: "left" | "right" | "up" | "down") {
         for (let j = i * props.tableSize; j < (i*props.tableSize) + props.tableSize; j++) {
           if (state.value[j] !== 0 && (state.value[j] === state.value[j - props.tableSize] || state.value[j - props.tableSize] === 0)) {
             if (state.value[j] === state.value[j - props.tableSize]) {
-              emit("update:current_score", props.current_score + 2);
+              current_for_orchestrator.value += 2;
+              emit("update:current_score", current_for_orchestrator);
             }
             state.value[j - props.tableSize] += state.value[j];
             state.value[j] = 0;
@@ -176,6 +181,7 @@ watch(() => props.tableSize, () => {
 
 function reset() {
   emit("update:current_score", 0);
+  current_for_orchestrator.value = 0;
   state.value = new Array(props.tableSize*props.tableSize).fill(0);
   won.value = false;
   lost.value = false;
@@ -185,7 +191,7 @@ function reset() {
 defineExpose({
   reset,
   state,
-  current_score: props.current_score,
+  current_score: current_for_orchestrator,
   won,
   lost,
   shift
